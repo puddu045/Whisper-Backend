@@ -12,7 +12,6 @@ commentRouter.post(
   authenticateToken,
   async (req, res) => {
     try {
-      console.log(req.user.userId);
       const newComment = new Comment({
         content: req.body.content,
         author: req.user.userId,
@@ -44,25 +43,26 @@ commentRouter.get(
   async (req, res) => {
     try {
       const userId = req.params.userId;
-      const postIds = await Comment.find({ author: userId })
-        .populate("post")
-        .distinct("post"); // Fetch user comments and populate related issues
-      const posts = await Promise.all(
-        postIds.map(async (postId) => {
-          const post = await Post.findById(postId).populate({
-            path: "comments",
-            populate: { path: "author", select: "username" }, // Populate comment author details if needed
-          });
-          return post;
-        })
-      );
 
-      const nonNullPosts = posts.filter((post) => post !== null);
+      // Step 1: Find all post IDs that the user has commented on
+      const postIds = await Comment.find({ author: userId }).distinct("post"); // Get distinct post IDs
 
-      console.log(nonNullPosts);
-      res.status(200).json(nonNullPosts);
+      // Step 2: Fetch posts that are not authored by the user
+      const posts = await Post.find({
+        _id: { $in: postIds }, // Filter to only the posts where the user has commented
+        author: { $ne: userId }, // Exclude posts authored by the user
+      }).populate({
+        path: "comments",
+        populate: { path: "author", select: "username" }, // Populate comment author details
+      });
+
+      // Respond with the filtered posts
+      res.status(200).json(posts);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch user comments" + error });
+      // Respond with an error message if fetching comments fails
+      res
+        .status(500)
+        .json({ error: "Failed to fetch user comments: " + error.message });
     }
   }
 );

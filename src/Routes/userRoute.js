@@ -16,7 +16,17 @@ authRouter.post("/signup", async (req, res) => {
     await user.save();
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    res.status(400).json({ error: "Registration failed" });
+    if (error.code === 11000) {
+      // MongoDB duplicate key error
+      const field = Object.keys(error.keyPattern)[0];
+      res
+        .status(400)
+        .json({
+          error: { message: `${field} already exists. Please choose another.` },
+        });
+    } else {
+      res.status(400).json({ message: "Registration failed", error });
+    }
   }
 });
 
