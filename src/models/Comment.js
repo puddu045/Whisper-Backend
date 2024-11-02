@@ -9,6 +9,7 @@ const CommentSchema = new Schema({
     maxlength: [300, "Content cannot exceed 300 characters."],
     trim: true,
   },
+  username: { type: String, required: true, minlength: 3, maxlength: 12 },
   author: { type: Schema.Types.ObjectId, ref: "User", required: true },
   post: { type: Schema.Types.ObjectId, ref: "Post", required: true },
   createdAt: { type: Date, default: Date.now },

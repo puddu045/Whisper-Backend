@@ -16,6 +16,7 @@ const PostSchema = new Schema({
     maxlength: [5000, "Description cannot exceed 5000 characters."],
     trim: true,
   },
+  username: { type: String, required: true, minlength: 3, maxlength: 12 },
   author: { type: Schema.Types.ObjectId, ref: "User", required: true },
   createdAt: { type: Date, default: Date.now },
   comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],

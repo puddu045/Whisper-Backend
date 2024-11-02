@@ -8,9 +8,11 @@ const Comment = require("../models/Comment");
 // Create Post
 postRouter.post("/createPost", authenticateToken, async (req, res) => {
   try {
+    const user = await User.findById(req.user.userId);
     const post = new Post({
       title: req.body.title,
       description: req.body.description,
+      username: user.username,
       author: req.user.userId,
     });
     await post.save();

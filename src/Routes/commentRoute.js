@@ -12,8 +12,11 @@ commentRouter.post(
   authenticateToken,
   async (req, res) => {
     try {
+      const user = await User.findById(req.user.userId);
+
       const newComment = new Comment({
         content: req.body.content,
+        username: user.username,
         author: req.user.userId,
         post: req.params.postId,
       });
