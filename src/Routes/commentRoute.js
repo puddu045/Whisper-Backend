@@ -6,7 +6,6 @@ const express = require("express");
 const Post = require("../models/Post");
 const commentRouter = express.Router();
 
-// Inside the create comment route
 commentRouter.post(
   "/posts/:postId/comments",
   authenticateToken,
@@ -47,10 +46,10 @@ commentRouter.get(
     try {
       const userId = req.params.userId;
 
-      // Step 1: Find all post IDs that the user has commented on
+      // Find all post IDs that the user has commented on
       const postIds = await Comment.find({ author: userId }).distinct("post"); // Get distinct post IDs
 
-      // Step 2: Fetch posts that are not authored by the user
+      // Fetch posts that are not authored by the user
       const posts = await Post.find({
         _id: { $in: postIds }, // Filter to only the posts where the user has commented
         author: { $ne: userId }, // Exclude posts authored by the user

@@ -14,6 +14,10 @@ postRouter.post("/createPost", authenticateToken, async (req, res) => {
       description: req.body.description,
       username: user.username,
       author: req.user.userId,
+      location: {
+        type: "Point",
+        coordinates: [req.body.longitude, req.body.latitude], // Longitude, Latitude (e.g., New York City)
+      },
     });
     await post.save();
     await User.findByIdAndUpdate(req.user.userId, {
@@ -34,23 +38,51 @@ postRouter.get(
       const posts = await Post.find({ author: userId }).populate("comments"); // Fetch user posts and populate comments
       res.status(200).json(posts);
     } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Failed to fetch user posts" });
     }
   }
 );
 
-// Get all posts except those created by the authenticated user
 postRouter.get("/posts", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
+    const { longitude, latitude, page = 1 } = req.query; // Expect page parameter for pagination
+
+    if (!longitude || !latitude) {
+      return res
+        .status(400)
+        .json({ error: "Longitude and latitude are required." });
+    }
+
+    const postsPerPage = 5; // Number of posts per page
+    // Calculate the skip value for pagination
+    const skip = (page - 1) * postsPerPage;
+
     // Fetch all posts excluding those by the authenticated user
-    const posts = await Post.find({ author: { $ne: userId } }).populate({
-      path: "comments",
-      populate: { path: "author", select: "username" }, // Populate comment author details if needed
-    });
+    const posts = await Post.find({
+      author: { $ne: userId },
+      location: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [longitude, latitude], // Longitude, Latitude
+          },
+          $maxDistance: 50000, // 50 km
+        },
+      },
+    })
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order (most recent first)
+      .skip(skip) // Skip the previous pages' posts
+      .limit(postsPerPage) // Limit the number of posts per page
+      .populate({
+        path: "comments",
+        populate: { path: "author", select: "username avatar" },
+      });
 
     res.status(200).json(posts);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
@@ -60,7 +92,7 @@ postRouter.get("/posts/:postId", async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId).populate({
       path: "comments",
-      populate: { path: "author", select: "username" }, // Populate comment author details if needed
+      populate: { path: "author", select: "username" },
     });
     res.status(200).json(post);
   } catch (error) {
@@ -91,6 +123,7 @@ postRouter.put("/posts/:postId", authenticateToken, async (req, res) => {
     // Update the post with new title and description
     post.title = title || post.title;
     post.description = description || post.description;
+    post.Edited = true;
 
     // Save the updated post
     await post.save();

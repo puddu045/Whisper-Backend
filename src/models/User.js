@@ -16,6 +16,8 @@ const UserSchema = new Schema({
       message: (props) => `${props.value} is not a valid username!`,
     },
   },
+  avatar: { type: String, default: "/src/assets/Avatars/avatar.png" },
+
   password: {
     type: String,
     required: true,
@@ -43,7 +45,7 @@ const UserSchema = new Schema({
     },
   },
   createdAt: { type: Date, default: Date.now },
-  posts: [{ type: Schema.Types.ObjectId, ref: "Post" }], // Optional: To track user's posts
+  posts: [{ type: Schema.Types.ObjectId, ref: "Post" }],
   comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
 });
 
